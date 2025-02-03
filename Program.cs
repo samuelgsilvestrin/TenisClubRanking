@@ -78,6 +78,10 @@ builder.Services.AddScoped<PromotionRelegationService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddHostedService<PromotionRelegationBackgroundService>();
 
+// Configure the port for Railway deployment
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+
 var app = builder.Build();
 
 // Initialize the database
