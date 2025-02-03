@@ -125,9 +125,8 @@ using (var scope = app.Services.CreateScope())
         }
 
         logger.LogInformation("Starting database migration...");
-        context.Database.EnsureDeleted(); // First clean the database
-        context.Database.EnsureCreated(); // Create new tables
-        logger.LogInformation("Database tables created successfully.");
+        context.Database.Migrate(); 
+        logger.LogInformation("Database migrations applied successfully.");
 
         logger.LogInformation("Starting database initialization...");
         DbInitializer.Initialize(context);
