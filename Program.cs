@@ -107,18 +107,38 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    
     try
     {
         var context = services.GetRequiredService<TennisContext>();
-        context.Database.EnsureCreated();
+        
+        // Log the connection string (without password)
+        var connectionString = context.Database.GetConnectionString();
+        if (connectionString != null)
+        {
+            var sanitizedConnectionString = connectionString.Replace(
+                connectionString.Split(';')
+                    .FirstOrDefault(s => s.StartsWith("Password=")) ?? "",
+                "Password=*****");
+            logger.LogInformation($"Using connection string: {sanitizedConnectionString}");
+        }
+
+        logger.LogInformation("Starting database migration...");
+        context.Database.EnsureDeleted(); // First clean the database
+        context.Database.EnsureCreated(); // Create new tables
+        logger.LogInformation("Database tables created successfully.");
+
+        logger.LogInformation("Starting database initialization...");
         DbInitializer.Initialize(context);
-        Console.WriteLine("Database seeded successfully.");
+        logger.LogInformation("Database initialized successfully.");
     }
     catch (Exception ex)
     {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while seeding the database.");
-        Console.WriteLine($"Error seeding database: {ex.Message}");
+        logger.LogError(ex, "An error occurred while initializing the database.");
+        Console.WriteLine($"Error initializing database: {ex.Message}");
+        Console.WriteLine($"Stack trace: {ex.StackTrace}");
+        throw;
     }
 }
 
