@@ -55,7 +55,26 @@ builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 // Add DbContext with error handling
 try
 {
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    string connectionString;
+    
+    // Check for Railway environment variables
+    var mysqlHost = Environment.GetEnvironmentVariable("MYSQL_HOST");
+    if (!string.IsNullOrEmpty(mysqlHost))
+    {
+        // We're on Railway, construct connection string from environment variables
+        var mysqlDatabase = Environment.GetEnvironmentVariable("MYSQL_DATABASE");
+        var mysqlUser = Environment.GetEnvironmentVariable("MYSQL_USER");
+        var mysqlPassword = Environment.GetEnvironmentVariable("MYSQL_PASSWORD");
+        var mysqlPort = Environment.GetEnvironmentVariable("MYSQL_PORT");
+        
+        connectionString = $"Server={mysqlHost};Port={mysqlPort};Database={mysqlDatabase};User={mysqlUser};Password={mysqlPassword};";
+    }
+    else
+    {
+        // Local development
+        connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    }
+
     builder.Services.AddDbContext<TennisContext>(options =>
         options.UseMySql(connectionString, 
             ServerVersion.AutoDetect(connectionString),
