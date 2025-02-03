@@ -58,14 +58,14 @@ try
     string connectionString;
     
     // Check for Railway environment variables
-    var mysqlHost = Environment.GetEnvironmentVariable("MYSQL_HOST");
+    var mysqlHost = Environment.GetEnvironmentVariable("MYSQLHOST");
     if (!string.IsNullOrEmpty(mysqlHost))
     {
         // We're on Railway, construct connection string from environment variables
-        var mysqlDatabase = Environment.GetEnvironmentVariable("MYSQL_DATABASE");
-        var mysqlUser = Environment.GetEnvironmentVariable("MYSQL_USER");
-        var mysqlPassword = Environment.GetEnvironmentVariable("MYSQL_PASSWORD");
-        var mysqlPort = Environment.GetEnvironmentVariable("MYSQL_PORT");
+        var mysqlDatabase = Environment.GetEnvironmentVariable("MYSQLDATABASE");
+        var mysqlUser = Environment.GetEnvironmentVariable("MYSQLUSER");
+        var mysqlPassword = Environment.GetEnvironmentVariable("MYSQLPASSWORD");
+        var mysqlPort = Environment.GetEnvironmentVariable("MYSQLPORT");
         
         connectionString = $"Server={mysqlHost};Port={mysqlPort};Database={mysqlDatabase};User={mysqlUser};Password={mysqlPassword};";
     }
