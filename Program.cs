@@ -101,25 +101,6 @@ try
                 .EnableSensitiveDataLogging()
                 .EnableDetailedErrors();
         });
-
-        // Initialize database only if we have a connection
-        var app = builder.Build();
-        using (var scope = app.Services.CreateScope())
-        {
-            var services = scope.ServiceProvider;
-            try
-            {
-                var context = services.GetRequiredService<TennisContext>();
-                context.Database.Migrate();
-                DbInitializer.Initialize(context);
-                Console.WriteLine("Database initialized successfully.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Database initialization error: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
-            }
-        }
     }
     else
     {
@@ -140,11 +121,32 @@ builder.Services.AddScoped<PromotionRelegationService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddHostedService<PromotionRelegationBackgroundService>();
 
+var app = builder.Build();
+
+// Initialize database if we have one configured
+if (app.Services.GetService<TennisContext>() != null)
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var services = scope.ServiceProvider;
+        try
+        {
+            var context = services.GetRequiredService<TennisContext>();
+            context.Database.Migrate();
+            DbInitializer.Initialize(context);
+            Console.WriteLine("Database initialized successfully.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Database initialization error: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+        }
+    }
+}
+
 // Configure the port for Railway deployment
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
-
-var app = builder.Build();
+app.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
