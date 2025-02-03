@@ -1,0 +1,54 @@
+@model TennisClubRanking.Models.Match
+
+@{
+    ViewData["Title"] = "Match Details";
+}
+
+<div class="container mt-4">
+    <h2>Match Details</h2>
+
+    <div>
+        <dl class="row">
+            <dt class="col-sm-3">Match Type</dt>
+            <dd class="col-sm-9">@Model.Type</dd>
+
+            <dt class="col-sm-3">Player 1</dt>
+            <dd class="col-sm-9">@Model.HomePlayer?.FullName</dd>
+
+            <dt class="col-sm-3">Player 2</dt>
+            <dd class="col-sm-9">@Model.AwayPlayer?.FullName</dd>
+
+            @if (Model.Type == TennisClubRanking.Models.MatchType.Doubles)
+            {
+                <dt class="col-sm-3">Player 3</dt>
+                <dd class="col-sm-9">@Model.Player3?.FullName</dd>
+
+                <dt class="col-sm-3">Player 4</dt>
+                <dd class="col-sm-9">@Model.Player4?.FullName</dd>
+            }
+
+            <dt class="col-sm-3">Court</dt>
+            <dd class="col-sm-9">@Model.Court</dd>
+
+            <dt class="col-sm-3">Scheduled Date/Time</dt>
+            <dd class="col-sm-9">@Model.ScheduledDateTime.ToString("g")</dd>
+
+            <dt class="col-sm-3">Valid for Ranking</dt>
+            <dd class="col-sm-9">@(Model.ValidForRanking ? "Yes" : "No")</dd>
+
+            <dt class="col-sm-3">Status</dt>
+            <dd class="col-sm-9">@Model.Status</dd>
+
+            @if (Model.Status == TennisClubRanking.Models.MatchStatus.Completed)
+            {
+                <dt class="col-sm-3">Winner</dt>
+                <dd class="col-sm-9">@Model.Winner?.FullName</dd>
+            }
+        </dl>
+    </div>
+
+    <div class="mt-3">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Edit</a>
+        <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+    </div>
+</div>

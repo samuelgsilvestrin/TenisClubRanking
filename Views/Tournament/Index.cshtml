@@ -1,0 +1,43 @@
+@model IEnumerable<TennisClubRanking.Models.Tournament>
+
+@{
+    ViewData["Title"] = "Tournaments";
+}
+
+<div class="container">
+    <h1>Tournaments</h1>
+
+    <p>
+        <a asp-action="Create" class="btn btn-primary">Create New Tournament</a>
+    </p>
+
+    <div class="row">
+        @foreach (var item in Model)
+        {
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">@item.Name</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">@item.StartDate.ToString("d") - @(item.EndDate?.ToString("d") ?? "TBD")</h6>
+                        <p class="card-text">@item.Description</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge @(item.Status switch
+                            {
+                                TournamentStatus.RegistrationOpen => "bg-success",
+                                TournamentStatus.InProgress => "bg-primary",
+                                TournamentStatus.Completed => "bg-secondary",
+                                _ => "bg-danger"
+                            })">
+                                @item.Status
+                            </span>
+                            <div>
+                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm">Details</a>
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Edit</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

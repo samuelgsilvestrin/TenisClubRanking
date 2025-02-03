@@ -1,0 +1,83 @@
+@model IEnumerable<TennisClubRanking.Models.Tournament>
+
+@{
+    ViewData["Title"] = "Tournaments";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Tournaments</h2>
+        <a asp-action="Create" class="btn btn-primary">Create New Tournament</a>
+    </div>
+
+    <div class="row">
+        <!-- Active Tournaments -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Active Tournaments</h4>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        @foreach (var tournament in Model.Where(t => t.Status != TournamentStatus.Completed))
+                        {
+                            <a asp-action="Details" asp-route-id="@tournament.Id" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">@tournament.Name</h5>
+                                    <span class="badge @(tournament.Status switch
+                                    {
+                                        TournamentStatus.RegistrationOpen => "bg-success",
+                                        TournamentStatus.InProgress => "bg-primary",
+                                        _ => "bg-secondary"
+                                    })">
+                                        @tournament.Status
+                                    </span>
+                                </div>
+                                <p class="mb-1">
+                                    @if (tournament.Status == TournamentStatus.RegistrationOpen)
+                                    {
+                                        <text>Starts on @tournament.StartDate.ToString("d")</text>
+                                    }
+                                    else
+                                    {
+                                        <text>Started on @tournament.StartDate.ToString("d")</text>
+                                    }
+                                </p>
+                                <small>@tournament.TournamentPlayers?.Count() participants</small>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Past Tournaments -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Past Tournaments</h4>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        @foreach (var tournament in Model.Where(t => t.Status == TournamentStatus.Completed))
+                        {
+                            <a asp-action="Details" asp-route-id="@tournament.Id" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">@tournament.Name</h5>
+                                    <small class="text-muted">Completed</small>
+                                </div>
+                                <p class="mb-1">
+                                    @if (tournament.Winner != null)
+                                    {
+                                        <text>Winner: @tournament.Winner.FullName</text>
+                                    }
+                                </p>
+                                <small>@tournament.StartDate.ToString("d") - @tournament.EndDate?.ToString("d")</small>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,32 @@
+@model TennisClubRanking.ViewComponents.UserMenuViewModel
+
+@if (Model.IsAuthenticated)
+{
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle text-dark" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-person-circle me-1"></i>@Model.Username
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+            <li><hr class="dropdown-divider"></li>
+            <li>
+                <a class="dropdown-item text-danger" href="#" onclick="document.getElementById('logoutForm').submit(); return false;">
+                    <i class="bi bi-box-arrow-right me-1"></i>Logout
+                </a>
+            </li>
+        </ul>
+    </li>
+    <form id="logoutForm" asp-controller="Auth" asp-action="Logout" method="post" style="display: none;"></form>
+}
+else
+{
+    <li class="nav-item">
+        <a class="nav-link text-dark" asp-controller="Auth" asp-action="Login">
+            <i class="bi bi-box-arrow-in-right me-1"></i>Login
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link text-dark" asp-controller="Auth" asp-action="Register">
+            <i class="bi bi-person-plus me-1"></i>Register
+        </a>
+    </li>
+}

@@ -1,0 +1,188 @@
+@model TennisClubRanking.Models.ViewModels.LeaderboardViewModel
+
+@{
+    ViewData["Title"] = "Leaderboard";
+}
+
+<div class="container mt-4">
+    <h2>Tennis Club Leaderboard</h2>
+
+    <div class="mb-4">
+        <div class="btn-group me-2" role="group">
+            <a asp-action="Leaderboard" asp-route-timeFrame="all" class="btn @(Model.TimeFrame == "all" ? "btn-primary" : "btn-outline-primary")">All Time</a>
+            <a asp-action="Leaderboard" asp-route-timeFrame="month" class="btn @(Model.TimeFrame == "month" ? "btn-primary" : "btn-outline-primary")">This Month</a>
+            <a asp-action="Leaderboard" asp-route-timeFrame="week" class="btn @(Model.TimeFrame == "week" ? "btn-primary" : "btn-outline-primary")">This Week</a>
+        </div>
+        <div class="btn-group" role="group">
+            <a asp-action="Leaderboard" asp-route-selectedGender="all" class="btn @(Model.SelectedGender == "all" ? "btn-primary" : "btn-outline-primary")">All</a>
+            <a asp-action="Leaderboard" asp-route-selectedGender="male" class="btn @(Model.SelectedGender == "male" ? "btn-primary" : "btn-outline-primary")">Male</a>
+            <a asp-action="Leaderboard" asp-route-selectedGender="female" class="btn @(Model.SelectedGender == "female" ? "btn-primary" : "btn-outline-primary")">Female</a>
+        </div>
+    </div>
+
+    @if (Model.SelectedGender != "female")
+    {
+        <div class="male-rankings mb-5">
+            <h3>Male Players</h3>
+
+            @if (Model.MaleAdvancedPlayers.Any())
+            {
+                <div class="category-section mb-4">
+                    <h4 class="text-success">Advanced Players (Top 16)</h4>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Player</th>
+                                    <th>Points</th>
+                                    <th>Matches Won</th>
+                                    <th>Matches Lost</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var player in Model.MaleAdvancedPlayers)
+                                {
+                                    <tr>
+                                        <td>@(Model.MaleAdvancedPlayers.ToList().IndexOf(player) + 1)</td>
+                                        <td>@player.PlayerName</td>
+                                        <td>@player.RankingPoints</td>
+                                        <td>@player.MatchesWon</td>
+                                        <td>@player.MatchesLost</td>
+                                        <td>
+                                            <a asp-controller="Players" asp-action="Details" asp-route-id="@player.PlayerId" class="btn btn-sm btn-info">Details</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+
+            @if (Model.MaleMediumPlayers.Any())
+            {
+                <div class="category-section mb-4">
+                    <h4 class="text-primary">Intermediate Players</h4>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Player</th>
+                                    <th>Points</th>
+                                    <th>Matches Won</th>
+                                    <th>Matches Lost</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var player in Model.MaleMediumPlayers)
+                                {
+                                    <tr>
+                                        <td>@(Model.MaleMediumPlayers.ToList().IndexOf(player) + 1)</td>
+                                        <td>@player.PlayerName</td>
+                                        <td>@player.RankingPoints</td>
+                                        <td>@player.MatchesWon</td>
+                                        <td>@player.MatchesLost</td>
+                                        <td>
+                                            <a asp-controller="Players" asp-action="Details" asp-route-id="@player.PlayerId" class="btn btn-sm btn-info">Details</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @if (Model.SelectedGender != "male")
+    {
+        <div class="female-rankings">
+            <h3>Female Players</h3>
+
+            @if (Model.FemaleAdvancedPlayers.Any())
+            {
+                <div class="category-section mb-4">
+                    <h4 class="text-success">Advanced Players (Top 16)</h4>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Player</th>
+                                    <th>Points</th>
+                                    <th>Matches Won</th>
+                                    <th>Matches Lost</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var player in Model.FemaleAdvancedPlayers)
+                                {
+                                    <tr>
+                                        <td>@(Model.FemaleAdvancedPlayers.ToList().IndexOf(player) + 1)</td>
+                                        <td>@player.PlayerName</td>
+                                        <td>@player.RankingPoints</td>
+                                        <td>@player.MatchesWon</td>
+                                        <td>@player.MatchesLost</td>
+                                        <td>
+                                            <a asp-controller="Players" asp-action="Details" asp-route-id="@player.PlayerId" class="btn btn-sm btn-info">Details</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+
+            @if (Model.FemaleMediumPlayers.Any())
+            {
+                <div class="category-section mb-4">
+                    <h4 class="text-primary">Intermediate Players</h4>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Player</th>
+                                    <th>Points</th>
+                                    <th>Matches Won</th>
+                                    <th>Matches Lost</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var player in Model.FemaleMediumPlayers)
+                                {
+                                    <tr>
+                                        <td>@(Model.FemaleMediumPlayers.ToList().IndexOf(player) + 1)</td>
+                                        <td>@player.PlayerName</td>
+                                        <td>@player.RankingPoints</td>
+                                        <td>@player.MatchesWon</td>
+                                        <td>@player.MatchesLost</td>
+                                        <td>
+                                            <a asp-controller="Players" asp-action="Details" asp-route-id="@player.PlayerId" class="btn btn-sm btn-info">Details</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Initialize any JavaScript functionality if needed
+        });
+    </script>
+}

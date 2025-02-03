@@ -1,0 +1,170 @@
+@model TennisClubRanking.Models.Match
+
+@{
+    ViewData["Title"] = "Create Match";
+    var players = ViewBag.Players as List<SelectListItem>;
+}
+
+<div class="container mt-4">
+    <h2>Create Match</h2>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            <ul>
+                @foreach (var modelState in ViewData.ModelState.Values)
+                {
+                    foreach (var error in modelState.Errors)
+                    {
+                        <li>@error.ErrorMessage</li>
+                    }
+                }
+            </ul>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["Error"]
+        </div>
+    }
+
+    @if (players == null || !players.Any())
+    {
+        <div class="alert alert-warning">
+            No players available. Please add some players first.
+        </div>
+        <a asp-controller="Players" asp-action="Create" class="btn btn-primary">Add Player</a>
+    }
+    else
+    {
+        <form asp-action="Create" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="HomePlayerId" class="form-label">Player 1</label>
+                <select asp-for="HomePlayerId" class="form-select player-select" asp-items="@players">
+                    <option value="">Select Player 1</option>
+                </select>
+                <span asp-validation-for="HomePlayerId" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="AwayPlayerId" class="form-label">Player 2</label>
+                <select asp-for="AwayPlayerId" class="form-select player-select" asp-items="@players">
+                    <option value="">Select Player 2</option>
+                </select>
+                <span asp-validation-for="AwayPlayerId" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Court" class="form-label">Court</label>
+                <select asp-for="Court" class="form-select" asp-items="Html.GetEnumSelectList<TennisClubRanking.Models.Court>()">
+                    <option value="">Select Court</option>
+                </select>
+                <span asp-validation-for="Court" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ScheduledDateTime" class="form-label">Date and Time</label>
+                <div class="row">
+                    <div class="col-md-6">
+                        <input type="date" id="matchDate" class="form-control" required />
+                    </div>
+                    <div class="col-md-3">
+                        <select id="matchHour" class="form-select" required>
+                            @for (int hour = 6; hour <= 21; hour++)
+                            {
+                                <option value="@hour.ToString("00")">@hour.ToString("00"):00</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select id="matchMinute" class="form-select" required>
+                            <option value="00">00</option>
+                            <option value="15">15</option>
+                            <option value="30">30</option>
+                            <option value="45">45</option>
+                        </select>
+                    </div>
+                </div>
+                <input asp-for="ScheduledDateTime" type="hidden" />
+                <span asp-validation-for="ScheduledDateTime" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ValidForRanking" class="form-label">Valid for Ranking</label>
+                <select asp-for="ValidForRanking" class="form-select">
+                    <option value="">Select if Valid for Ranking</option>
+                    <option value="true">Yes</option>
+                    <option value="false">No</option>
+                </select>
+                <span asp-validation-for="ValidForRanking" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary">Create Match</button>
+                <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+            </div>
+        </form>
+    }
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        $(document).ready(function () {
+            // Set min date to today
+            var today = new Date().toISOString().split('T')[0];
+            $('#matchDate').attr('min', today);
+            $('#matchDate').val(today);
+            
+            // Set max date to 1 month from now
+            var maxDate = new Date();
+            maxDate.setMonth(maxDate.getMonth() + 1);
+            $('#matchDate').attr('max', maxDate.toISOString().split('T')[0]);
+
+            // Handle player selection change
+            $('.player-select').change(function() {
+                var selectedPlayers = $('.player-select').map(function() {
+                    return $(this).val();
+                }).get().filter(id => id !== '');
+
+                $('.player-select').each(function() {
+                    var currentSelect = $(this);
+                    var currentValue = currentSelect.val();
+                    
+                    currentSelect.find('option').each(function() {
+                        var option = $(this);
+                        var optionValue = option.val();
+                        
+                        if (!optionValue || optionValue === currentValue || !selectedPlayers.includes(optionValue)) {
+                            option.show();
+                        } else {
+                            option.hide();
+                        }
+                    });
+                });
+            });
+
+            // Update datetime before form submission
+            $('form').submit(function(e) {
+                var date = $('#matchDate').val();
+                var hour = $('#matchHour').val();
+                var minute = $('#matchMinute').val();
+
+                if (!date || !hour || !minute) {
+                    e.preventDefault();
+                    alert('Please select date and time');
+                    return false;
+                }
+
+                // Format datetime for ASP.NET Core
+                var fullDateTime = date + 'T' + hour + ':' + minute + ':00';
+                $('[name="ScheduledDateTime"]').val(fullDateTime);
+            });
+        });
+    </script>
+}

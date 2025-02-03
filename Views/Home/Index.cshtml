@@ -1,0 +1,90 @@
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<style>
+    .hero-section {
+        background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1554068865-24cecd4e34b8?ixlib=rb-4.0.3') no-repeat center center;
+        background-size: cover;
+        height: 60vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        text-align: center;
+        margin-bottom: 3rem;
+        margin-top: -1rem;
+    }
+
+    .hero-content h1 {
+        font-size: 3.5rem;
+        font-weight: bold;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        margin-bottom: 1rem;
+    }
+
+    .card {
+        transition: transform 0.3s ease;
+        margin-bottom: 2rem;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .card:hover {
+        transform: translateY(-10px);
+    }
+
+    .card-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        color: #0d6efd;
+    }
+</style>
+
+<div class="hero-section">
+    <div class="hero-content">
+        <h1>Tennis Club Ranking</h1>
+        <p class="lead">Manage tournaments, matches, and player rankings for your tennis club.</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-trophy card-icon text-warning"></i>
+                    <h5 class="card-title">Tournaments</h5>
+                    <p class="card-text">View and manage tennis tournaments.</p>
+                    <a asp-controller="Tournaments" asp-action="Index" class="btn btn-primary">
+                        <i class="bi bi-arrow-right-circle me-1"></i>Go to Tournaments
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-controller card-icon text-info"></i>
+                    <h5 class="card-title">Matches</h5>
+                    <p class="card-text">Record and track match results.</p>
+                    <a asp-controller="Matches" asp-action="Index" class="btn btn-primary">
+                        <i class="bi bi-arrow-right-circle me-1"></i>Go to Matches
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-bar-chart card-icon text-success"></i>
+                    <h5 class="card-title">Leaderboard</h5>
+                    <p class="card-text">Check player rankings and statistics.</p>
+                    <a asp-controller="Statistics" asp-action="Leaderboard" class="btn btn-primary">
+                        <i class="bi bi-arrow-right-circle me-1"></i>View Leaderboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
