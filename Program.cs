@@ -66,13 +66,27 @@ try
         var mysqlUser = Environment.GetEnvironmentVariable("MYSQLUSER");
         var mysqlPassword = Environment.GetEnvironmentVariable("MYSQLPASSWORD");
         var mysqlPort = Environment.GetEnvironmentVariable("MYSQLPORT");
+
+        if (string.IsNullOrEmpty(mysqlDatabase) || string.IsNullOrEmpty(mysqlUser) || 
+            string.IsNullOrEmpty(mysqlPassword) || string.IsNullOrEmpty(mysqlPort))
+        {
+            // Log warning but continue without database
+            Console.WriteLine("Warning: MySQL environment variables not fully configured. Running without database.");
+            return;
+        }
         
         connectionString = $"Server={mysqlHost};Port={mysqlPort};Database={mysqlDatabase};User={mysqlUser};Password={mysqlPassword};";
     }
     else
     {
-        // Local development
+        // Local development or no MySQL configured
         connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            // Log warning but continue without database
+            Console.WriteLine("Warning: No database connection string configured. Running without database.");
+            return;
+        }
     }
 
     builder.Services.AddDbContext<TennisContext>(options =>
@@ -86,8 +100,9 @@ try
 }
 catch (Exception ex)
 {
+    // Log error but allow application to start without database
     Console.WriteLine($"Database configuration error: {ex.Message}");
-    throw;
+    Console.WriteLine("Application will continue without database functionality.");
 }
 
 // Add services
