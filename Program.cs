@@ -57,6 +57,7 @@ try
 {
     var connectionString = string.Empty;
     var isProduction = builder.Environment.IsProduction();
+    var hasDatabase = false;
     
     if (isProduction)
     {
@@ -67,40 +68,69 @@ try
         var mysqlPassword = Environment.GetEnvironmentVariable("MYSQLPASSWORD");
         var mysqlPort = Environment.GetEnvironmentVariable("MYSQLPORT");
         
-        if (!string.IsNullOrEmpty(mysqlHost))
+        if (!string.IsNullOrEmpty(mysqlHost) && !string.IsNullOrEmpty(mysqlDatabase) && 
+            !string.IsNullOrEmpty(mysqlUser) && !string.IsNullOrEmpty(mysqlPassword) && 
+            !string.IsNullOrEmpty(mysqlPort))
         {
             connectionString = $"Server={mysqlHost};Port={mysqlPort};Database={mysqlDatabase};User={mysqlUser};Password={mysqlPassword};AllowUserVariables=true;";
+            hasDatabase = true;
+        }
+        else
+        {
+            Console.WriteLine("No MySQL configuration found. Running without database.");
         }
     }
     else
     {
         // Use local development connection string
         connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+        hasDatabase = !string.IsNullOrEmpty(connectionString);
     }
 
-    if (string.IsNullOrEmpty(connectionString))
+    if (hasDatabase)
     {
-        throw new InvalidOperationException("No database connection string configured.");
-    }
+        builder.Services.AddDbContext<TennisContext>(options =>
+        {
+            options.UseMySql(connectionString, 
+                ServerVersion.AutoDetect(connectionString),
+                mySqlOptions => mySqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 10,
+                    maxRetryDelay: TimeSpan.FromSeconds(30),
+                    errorNumbersToAdd: null))
+                .LogTo(Console.WriteLine, LogLevel.Information)
+                .EnableSensitiveDataLogging()
+                .EnableDetailedErrors();
+        });
 
-    builder.Services.AddDbContext<TennisContext>(options =>
+        // Initialize database only if we have a connection
+        var app = builder.Build();
+        using (var scope = app.Services.CreateScope())
+        {
+            var services = scope.ServiceProvider;
+            try
+            {
+                var context = services.GetRequiredService<TennisContext>();
+                context.Database.Migrate();
+                DbInitializer.Initialize(context);
+                Console.WriteLine("Database initialized successfully.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Database initialization error: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            }
+        }
+    }
+    else
     {
-        options.UseMySql(connectionString, 
-            ServerVersion.AutoDetect(connectionString),
-            mySqlOptions => mySqlOptions.EnableRetryOnFailure(
-                maxRetryCount: 10,
-                maxRetryDelay: TimeSpan.FromSeconds(30),
-                errorNumbersToAdd: null))
-            .LogTo(Console.WriteLine, LogLevel.Information)
-            .EnableSensitiveDataLogging()
-            .EnableDetailedErrors();
-    });
+        Console.WriteLine("Running without database functionality.");
+    }
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"Critical database configuration error: {ex.Message}");
+    Console.WriteLine($"Configuration error: {ex.Message}");
     Console.WriteLine($"Stack trace: {ex.StackTrace}");
-    throw; // We need the database, so let the application fail if it can't connect
+    Console.WriteLine("Continuing without database functionality.");
 }
 
 // Add services
@@ -115,44 +145,6 @@ var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 var app = builder.Build();
-
-// Initialize the database
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    var logger = services.GetRequiredService<ILogger<Program>>();
-    
-    try
-    {
-        var context = services.GetRequiredService<TennisContext>();
-        
-        // Log the connection string (without password)
-        var connectionString = context.Database.GetConnectionString();
-        if (connectionString != null)
-        {
-            var sanitizedConnectionString = connectionString.Replace(
-                connectionString.Split(';')
-                    .FirstOrDefault(s => s.StartsWith("Password=")) ?? "",
-                "Password=*****");
-            logger.LogInformation($"Using connection string: {sanitizedConnectionString}");
-        }
-
-        logger.LogInformation("Starting database migration...");
-        context.Database.Migrate(); 
-        logger.LogInformation("Database migrations applied successfully.");
-
-        logger.LogInformation("Starting database initialization...");
-        DbInitializer.Initialize(context);
-        logger.LogInformation("Database initialized successfully.");
-    }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "An error occurred while initializing the database.");
-        Console.WriteLine($"Error initializing database: {ex.Message}");
-        Console.WriteLine($"Stack trace: {ex.StackTrace}");
-        throw;
-    }
-}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
