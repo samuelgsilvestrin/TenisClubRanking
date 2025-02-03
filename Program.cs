@@ -121,6 +121,10 @@ builder.Services.AddScoped<PromotionRelegationService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddHostedService<PromotionRelegationBackgroundService>();
 
+// Configure the port for Railway deployment
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+
 var app = builder.Build();
 
 // Initialize database if we have one configured
@@ -143,10 +147,6 @@ if (app.Services.GetService<TennisContext>() != null)
         }
     }
 }
-
-// Configure the port for Railway deployment
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-app.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
