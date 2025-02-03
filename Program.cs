@@ -55,54 +55,52 @@ builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 // Add DbContext with error handling
 try
 {
-    string connectionString;
+    var connectionString = string.Empty;
+    var isProduction = builder.Environment.IsProduction();
     
-    // Check for Railway environment variables
-    var mysqlHost = Environment.GetEnvironmentVariable("MYSQLHOST");
-    if (!string.IsNullOrEmpty(mysqlHost))
+    if (isProduction)
     {
-        // We're on Railway, construct connection string from environment variables
+        // Use Railway's environment variables
+        var mysqlHost = Environment.GetEnvironmentVariable("MYSQLHOST");
         var mysqlDatabase = Environment.GetEnvironmentVariable("MYSQLDATABASE");
         var mysqlUser = Environment.GetEnvironmentVariable("MYSQLUSER");
         var mysqlPassword = Environment.GetEnvironmentVariable("MYSQLPASSWORD");
         var mysqlPort = Environment.GetEnvironmentVariable("MYSQLPORT");
-
-        if (string.IsNullOrEmpty(mysqlDatabase) || string.IsNullOrEmpty(mysqlUser) || 
-            string.IsNullOrEmpty(mysqlPassword) || string.IsNullOrEmpty(mysqlPort))
-        {
-            // Log warning but continue without database
-            Console.WriteLine("Warning: MySQL environment variables not fully configured. Running without database.");
-            return;
-        }
         
-        connectionString = $"Server={mysqlHost};Port={mysqlPort};Database={mysqlDatabase};User={mysqlUser};Password={mysqlPassword};";
+        if (!string.IsNullOrEmpty(mysqlHost))
+        {
+            connectionString = $"Server={mysqlHost};Port={mysqlPort};Database={mysqlDatabase};User={mysqlUser};Password={mysqlPassword};AllowUserVariables=true;";
+        }
     }
     else
     {
-        // Local development or no MySQL configured
+        // Use local development connection string
         connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-        if (string.IsNullOrEmpty(connectionString))
-        {
-            // Log warning but continue without database
-            Console.WriteLine("Warning: No database connection string configured. Running without database.");
-            return;
-        }
+    }
+
+    if (string.IsNullOrEmpty(connectionString))
+    {
+        throw new InvalidOperationException("No database connection string configured.");
     }
 
     builder.Services.AddDbContext<TennisContext>(options =>
+    {
         options.UseMySql(connectionString, 
             ServerVersion.AutoDetect(connectionString),
-            mySqlOptions => mySqlOptions.EnableRetryOnFailure())
+            mySqlOptions => mySqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 10,
+                maxRetryDelay: TimeSpan.FromSeconds(30),
+                errorNumbersToAdd: null))
             .LogTo(Console.WriteLine, LogLevel.Information)
             .EnableSensitiveDataLogging()
-            .EnableDetailedErrors()
-    );
+            .EnableDetailedErrors();
+    });
 }
 catch (Exception ex)
 {
-    // Log error but allow application to start without database
-    Console.WriteLine($"Database configuration error: {ex.Message}");
-    Console.WriteLine("Application will continue without database functionality.");
+    Console.WriteLine($"Critical database configuration error: {ex.Message}");
+    Console.WriteLine($"Stack trace: {ex.StackTrace}");
+    throw; // We need the database, so let the application fail if it can't connect
 }
 
 // Add services
