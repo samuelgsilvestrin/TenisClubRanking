@@ -4,39 +4,16 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 # Set working directory
 WORKDIR /src
 
-# Show dotnet info for debugging
-RUN dotnet --info
-
-# Copy only the project file first
+# Copy csproj and restore as distinct layers
 COPY ["TennisClubRanking.csproj", "./"]
+RUN dotnet restore "TennisClubRanking.csproj"
 
-# Show project file contents for debugging
-RUN cat TennisClubRanking.csproj
-
-# Restore NuGet packages with detailed logging
-RUN dotnet restore "TennisClubRanking.csproj" --verbosity detailed
-
-# Copy the rest of the source code
+# Copy everything else and build
 COPY . .
-
-# List contents for debugging
-RUN ls -la
-
-# Build with detailed logging
-RUN dotnet build "TennisClubRanking.csproj" \
-    --configuration Release \
-    --no-restore \
-    --verbosity detailed \
-    -o /app/build \
-    /p:GenerateFullPaths=true \
-    /consoleloggerparameters:NoSummary
+RUN dotnet build "TennisClubRanking.csproj" -c Release -o /app/build --no-restore
 
 # Publish the application
-RUN dotnet publish "TennisClubRanking.csproj" \
-    --configuration Release \
-    --no-restore \
-    -o /app/publish \
-    /p:UseAppHost=false
+RUN dotnet publish "TennisClubRanking.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore
 
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0

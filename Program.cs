@@ -1,3 +1,9 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using TennisClubRanking.Data;
+using TennisClubRanking.Services;
+using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -9,7 +15,7 @@ builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 builder.Logging.SetMinimumLevel(LogLevel.Information);
 
-// Configure authentication
+// Add cookie authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -23,47 +29,30 @@ builder.Services.AddDistributedMemoryCache();
 
 // Add services
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<RankingService>();
+builder.Services.AddScoped<StatisticsService>();
+builder.Services.AddScoped<PromotionRelegationService>();
+builder.Services.AddHostedService<PromotionRelegationBackgroundService>();
 
-// Configure database
-var isProduction = builder.Environment.IsProduction();
-if (isProduction)
+// Configure database connection
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrEmpty(connectionString))
 {
-    // Use Railway's environment variables for MySQL
-    var mysqlHost = Environment.GetEnvironmentVariable("MYSQLHOST");
-    var mysqlDatabase = Environment.GetEnvironmentVariable("MYSQLDATABASE");
-    var mysqlUser = Environment.GetEnvironmentVariable("MYSQLUSER");
-    var mysqlPassword = Environment.GetEnvironmentVariable("MYSQLPASSWORD");
-    var mysqlPort = Environment.GetEnvironmentVariable("MYSQLPORT") ?? "3306";
+    // Build connection string from environment variables for Railway
+    var host = builder.Configuration["MYSQLHOST"] ?? "localhost";
+    var port = builder.Configuration["MYSQLPORT"] ?? "3306";
+    var database = builder.Configuration["MYSQLDATABASE"] ?? "tennis_club";
+    var username = builder.Configuration["MYSQLUSER"] ?? "root";
+    var password = builder.Configuration["MYSQLPASSWORD"] ?? "password";
 
-    Console.WriteLine("=== Railway Configuration ===");
-    Console.WriteLine($"Environment: {builder.Environment.EnvironmentName}");
-    Console.WriteLine($"MySQL Host Available: {!string.IsNullOrEmpty(mysqlHost)}");
-    Console.WriteLine($"MySQL Database Available: {!string.IsNullOrEmpty(mysqlDatabase)}");
-    Console.WriteLine($"MySQL User Available: {!string.IsNullOrEmpty(mysqlUser)}");
-    Console.WriteLine($"MySQL Port: {mysqlPort}");
-
-    if (!string.IsNullOrEmpty(mysqlHost) && !string.IsNullOrEmpty(mysqlDatabase) && 
-        !string.IsNullOrEmpty(mysqlUser) && !string.IsNullOrEmpty(mysqlPassword))
-    {
-        var connectionString = $"Server={mysqlHost};Port={mysqlPort};Database={mysqlDatabase};User={mysqlUser};Password={mysqlPassword};AllowUserVariables=true;";
-        builder.Services.AddDbContext<TennisContext>(options =>
-            options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
-        Console.WriteLine("Database context configured successfully");
-    }
-    else
-    {
-        Console.WriteLine("ERROR: Missing required MySQL environment variables");
-    }
+    connectionString = $"Server={host};Port={port};Database={database};User={username};Password={password};";
 }
-else
+
+builder.Services.AddDbContext<TennisContext>(options =>
 {
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    if (!string.IsNullOrEmpty(connectionString))
-    {
-        builder.Services.AddDbContext<TennisContext>(options =>
-            options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
-    }
-}
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString),
+        mySqlOptions => mySqlOptions.EnableRetryOnFailure());
+});
 
 // Configure port
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
@@ -91,6 +80,13 @@ app.UseSession();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// Ensure database is created and migrations are applied
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<TennisContext>();
+    context.Database.Migrate();
+}
 
 Console.WriteLine("=== Application Starting ===");
 Console.WriteLine($"Environment: {app.Environment.EnvironmentName}");
