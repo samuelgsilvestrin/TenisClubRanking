@@ -4,16 +4,31 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 # Set working directory
 WORKDIR /src
 
+# Show SDK info
+RUN dotnet --info
+
 # Copy csproj and restore as distinct layers
 COPY ["TennisClubRanking.csproj", "./"]
-RUN dotnet restore "TennisClubRanking.csproj"
+RUN dotnet restore "TennisClubRanking.csproj" --verbosity detailed
 
-# Copy everything else and build
+# Copy everything else
 COPY . .
-RUN dotnet build "TennisClubRanking.csproj" -c Release -o /app/build --no-restore
+
+# Show contents for debugging
+RUN ls -la
+
+# Build with detailed output
+RUN dotnet build "TennisClubRanking.csproj" \
+    --configuration Release \
+    --no-restore \
+    --verbosity detailed
 
 # Publish the application
-RUN dotnet publish "TennisClubRanking.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore
+RUN dotnet publish "TennisClubRanking.csproj" \
+    --configuration Release \
+    --no-restore \
+    --output /app/publish \
+    /p:UseAppHost=false
 
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
