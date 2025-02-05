@@ -41,13 +41,13 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 if (string.IsNullOrEmpty(connectionString))
 {
     // Build connection string from environment variables for Railway
-    var host = builder.Configuration["MYSQLHOST"] ?? "localhost";
-    var port = builder.Configuration["MYSQLPORT"] ?? "3306";
-    var database = builder.Configuration["MYSQLDATABASE"] ?? "tennis_club";
-    var username = builder.Configuration["MYSQLUSER"] ?? "root";
-    var password = builder.Configuration["MYSQLPASSWORD"] ?? "password";
+    var dbHost = builder.Configuration["MYSQLHOST"] ?? "localhost";
+    var dbPort = builder.Configuration["MYSQLPORT"] ?? "3306";
+    var dbName = builder.Configuration["MYSQLDATABASE"] ?? "tennis_club";
+    var dbUser = builder.Configuration["MYSQLUSER"] ?? "root";
+    var dbPassword = builder.Configuration["MYSQLPASSWORD"] ?? "password";
 
-    connectionString = $"Server={host};Port={port};Database={database};User={username};Password={password};";
+    connectionString = $"Server={dbHost};Port={dbPort};Database={dbName};User={dbUser};Password={dbPassword};";
 }
 
 builder.Services.AddDbContext<TennisContext>(options =>
