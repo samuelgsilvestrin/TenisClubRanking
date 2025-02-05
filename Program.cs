@@ -16,12 +16,14 @@ builder.Logging.AddDebug();
 builder.Logging.SetMinimumLevel(LogLevel.Information);
 
 // Add cookie authentication
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
-    {
-        options.LoginPath = "/Auth/Login";
-        options.LogoutPath = "/Auth/Logout";
-    });
+builder.Services.AddAuthentication(options => {
+    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+}).AddCookie(options => {
+    options.LoginPath = "/Auth/Login";
+    options.LogoutPath = "/Auth/Logout";
+});
 
 // Add session
 builder.Services.AddSession();
