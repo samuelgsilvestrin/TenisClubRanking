@@ -18,18 +18,52 @@ namespace TennisClubRanking.Controllers
 
         public IActionResult Index()
         {
-            return View();
+            try
+            {
+                _logger.LogInformation("Accessing Index page");
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error accessing Index page");
+                return Error();
+            }
         }
 
         public IActionResult Privacy()
         {
-            return View();
+            try
+            {
+                _logger.LogInformation("Accessing Privacy page");
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error accessing Privacy page");
+                return Error();
+            }
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            var requestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier;
+            _logger.LogError("Error page accessed. RequestId: {RequestId}", requestId);
+            return View(new ErrorViewModel { RequestId = requestId });
+        }
+
+        [Route("/health")]
+        public IActionResult Health()
+        {
+            try
+            {
+                return Ok(new { status = "healthy", timestamp = DateTime.UtcNow });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Health check failed");
+                return StatusCode(500, new { status = "unhealthy", error = ex.Message });
+            }
         }
     }
 }

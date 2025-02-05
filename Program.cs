@@ -25,6 +25,15 @@ if (builder.Environment.IsDevelopment())
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+// Configure forwarded headers and HTTPS
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | 
+                              Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 // Configure authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -61,23 +70,37 @@ try
     
     if (isProduction)
     {
-        // Use Railway's environment variables
+        // Use Railway's environment variables for MySQL
         var mysqlHost = Environment.GetEnvironmentVariable("MYSQLHOST");
         var mysqlDatabase = Environment.GetEnvironmentVariable("MYSQLDATABASE");
         var mysqlUser = Environment.GetEnvironmentVariable("MYSQLUSER");
         var mysqlPassword = Environment.GetEnvironmentVariable("MYSQLPASSWORD");
-        var mysqlPort = Environment.GetEnvironmentVariable("MYSQLPORT");
+        var mysqlPort = Environment.GetEnvironmentVariable("MYSQLPORT") ?? "3306"; // Default MySQL port if not specified
+        
+        Console.WriteLine("Railway MySQL Configuration:");
+        Console.WriteLine($"MYSQLHOST: {!string.IsNullOrEmpty(mysqlHost)}");
+        Console.WriteLine($"MYSQLDATABASE: {!string.IsNullOrEmpty(mysqlDatabase)}");
+        Console.WriteLine($"MYSQLUSER: {!string.IsNullOrEmpty(mysqlUser)}");
+        Console.WriteLine($"MYSQLPORT: {mysqlPort}");
+        Console.WriteLine($"MYSQLPASSWORD: {!string.IsNullOrEmpty(mysqlPassword)}");
         
         if (!string.IsNullOrEmpty(mysqlHost) && !string.IsNullOrEmpty(mysqlDatabase) && 
-            !string.IsNullOrEmpty(mysqlUser) && !string.IsNullOrEmpty(mysqlPassword) && 
-            !string.IsNullOrEmpty(mysqlPort))
+            !string.IsNullOrEmpty(mysqlUser) && !string.IsNullOrEmpty(mysqlPassword))
         {
             connectionString = $"Server={mysqlHost};Port={mysqlPort};Database={mysqlDatabase};User={mysqlUser};Password={mysqlPassword};AllowUserVariables=true;";
             hasDatabase = true;
+            Console.WriteLine("MySQL connection string configured successfully");
         }
         else
         {
-            Console.WriteLine("No MySQL configuration found. Running without database.");
+            Console.WriteLine("ERROR: Missing required MySQL environment variables");
+            foreach (var ev in new[] { "MYSQLHOST", "MYSQLDATABASE", "MYSQLUSER", "MYSQLPASSWORD" })
+            {
+                if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(ev)))
+                {
+                    Console.WriteLine($"Missing: {ev}");
+                }
+            }
         }
     }
     else
@@ -121,9 +144,18 @@ builder.Services.AddScoped<PromotionRelegationService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddHostedService<PromotionRelegationBackgroundService>();
 
-// Configure the port for Railway deployment
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+// Configure the application port for Railway deployment
+var appPort = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(appPort))
+{
+    Console.WriteLine($"Using Railway PORT: {appPort}");
+    builder.WebHost.UseUrls($"http://+:{appPort}");
+}
+else
+{
+    Console.WriteLine("PORT environment variable not found, using default port 8080");
+    builder.WebHost.UseUrls("http://+:8080");
+}
 
 var app = builder.Build();
 
@@ -156,8 +188,33 @@ if (app.Environment.IsDevelopment())
 else
 {
     app.UseExceptionHandler("/Home/Error");
+    
+    // Enable HTTPS Redirection and HSTS
     app.UseHsts();
+    app.UseHttpsRedirection();
+    
+    // Use forwarded headers
+    app.UseForwardedHeaders();
 }
+
+// Trust the Railway proxy
+app.Use((context, next) =>
+{
+    if (context.Request.Headers.TryGetValue("X-Forwarded-Proto", out var proto))
+    {
+        if (proto == "https")
+        {
+            context.Request.Scheme = "https";
+        }
+    }
+    
+    if (context.Request.Headers.TryGetValue("X-Forwarded-Host", out var host))
+    {
+        context.Request.Host = new HostString(host);
+    }
+    
+    return next();
+});
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
@@ -178,5 +235,5 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-Console.WriteLine("Application starting on ports 5100 (HTTP) and 7100 (HTTPS)...");
+Console.WriteLine("Application starting...");
 app.Run();
