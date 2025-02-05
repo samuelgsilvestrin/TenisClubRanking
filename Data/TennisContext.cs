@@ -77,6 +77,54 @@ namespace TennisClubRanking.Data
                 .HasForeignKey(pr => pr.PlayerId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // Configure auto-increment columns for MySQL
+            if (Database.ProviderName == "Pomelo.EntityFrameworkCore.MySql")
+            {
+                foreach (var entity in modelBuilder.Model.GetEntityTypes())
+                {
+                    // Configure auto-increment for Id properties
+                    var properties = entity.GetProperties()
+                        .Where(p => p.Name == "Id" && p.ClrType == typeof(int));
+                    
+                    foreach (var property in properties)
+                    {
+                        property.ValueGenerated = Microsoft.EntityFrameworkCore.Metadata.ValueGenerated.OnAdd;
+                    }
+                }
+            }
+
+            modelBuilder.Entity<Match>()
+                .HasOne(m => m.Player1)
+                .WithMany(p => p.MatchesAsPlayer1)
+                .HasForeignKey(m => m.Player1Id)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Match>()
+                .HasOne(m => m.Player2)
+                .WithMany(p => p.MatchesAsPlayer2)
+                .HasForeignKey(m => m.Player2Id)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<RankingPoints>()
+                .HasOne(rp => rp.Player)
+                .WithMany(p => p.RankingPoints)
+                .HasForeignKey(rp => rp.PlayerId);
+
+            modelBuilder.Entity<RankingPoints>()
+                .HasOne(rp => rp.Match)
+                .WithMany(m => m.RankingPoints)
+                .HasForeignKey(rp => rp.MatchId);
+
+            modelBuilder.Entity<RankingHistory>()
+                .HasOne(rh => rh.Player)
+                .WithMany(p => p.RankingHistory)
+                .HasForeignKey(rh => rh.PlayerId);
+
+            modelBuilder.Entity<PromotionRelegation>()
+                .HasOne(pr => pr.Player)
+                .WithMany(p => p.PromotionRelegations)
+                .HasForeignKey(pr => pr.PlayerId);
+
             base.OnModelCreating(modelBuilder);
         }
     }
